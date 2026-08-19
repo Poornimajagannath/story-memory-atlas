@@ -1,0 +1,4 @@
+interface:
+  display_name: "Story Memory Atlas"
+  short_description: "Build interactive story memory guides"
+  default_prompt: "Create an interactive memory atlas for this story with a spoiler-safe summary, character map, timeline, and recall quiz."
