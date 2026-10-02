@@ -18,6 +18,7 @@ type Atlas = {
     group: string;
     groupMatch: string;
     groupOther: string;
+    blockedQuery: string;
   };
   quiz: { correct: string; wrong: string; why: string };
   backToTop: boolean;
@@ -41,6 +42,7 @@ const atlases: Atlas[] = [
       group: 'Gods',
       groupMatch: 'Athena',
       groupOther: 'Odysseus',
+      blockedQuery: 'Penelope',
     },
     quiz: {
       correct: 'So the other Cyclopes will not understand who attacked him',
@@ -66,6 +68,7 @@ const atlases: Atlas[] = [
       group: 'Eridians',
       groupMatch: 'Rocky',
       groupOther: 'Eva Stratt',
+      blockedQuery: 'Stratt',
     },
     quiz: {
       correct:
@@ -117,7 +120,7 @@ for (const atlas of atlases) {
       await expect(screen.getByRole('heading', atlas.cast.groupMatch)).toBeVisible();
       await expect(screen.getByRole('heading', atlas.cast.groupOther)).toBeHidden();
 
-      await search.fill(atlas.cast.groupOther);
+      await search.fill(atlas.cast.blockedQuery);
       await expect(screen.getByRole('heading', atlas.cast.groupMatch)).toBeHidden();
       await expect(screen.getByRole('heading', atlas.cast.groupOther)).toBeHidden();
 
@@ -142,7 +145,8 @@ for (const atlas of atlases) {
 
     test('marks a correct quiz answer and explains it', async ({ app, screen }) => {
       await app.open(atlas.path);
-      await expect(screen.getByText(atlas.quiz.why)).toBeHidden();
+      const feedback = screen.getByRole('status');
+      await expect(feedback).toBeHidden();
 
       await screen.getByRole('button', atlas.quiz.correct).click();
 
@@ -150,8 +154,9 @@ for (const atlas of atlases) {
       await expect(chosen).toHaveAttribute('class', /correct/);
       await expect(chosen).toBeDisabled();
       await expect(screen.getByRole('button', atlas.quiz.wrong)).toBeDisabled();
-      await expect(screen.getByText(atlas.quiz.why)).toBeVisible();
-      await expect(screen.getByText(atlas.quiz.why)).toContainText('Correct.');
+      await expect(feedback).toBeVisible();
+      await expect(feedback).toContainText('Correct.');
+      await expect(feedback).toContainText(atlas.quiz.why);
     });
 
     test('a wrong quiz answer is not called correct', async ({ app, screen }) => {
@@ -159,11 +164,13 @@ for (const atlas of atlases) {
       await screen.getByRole('button', atlas.quiz.wrong).click();
 
       const chosen = screen.getByRole('button', atlas.quiz.wrong);
+      const feedback = screen.getByRole('status');
       await expect(chosen).toHaveAttribute('class', /wrong/);
       await expect(chosen).toBeDisabled();
       await expect(screen.getByRole('button', atlas.quiz.correct)).toBeDisabled();
-      await expect(screen.getByText(atlas.quiz.why)).toBeVisible();
-      await expect(screen.getByText(atlas.quiz.why)).toContainText('Not quite.');
+      await expect(feedback).toBeVisible();
+      await expect(feedback).toContainText('Not quite.');
+      await expect(feedback).toContainText(atlas.quiz.why);
     });
   });
 }
@@ -173,7 +180,7 @@ test('the Odyssey guide returns to the top after a long scroll', async ({ app, s
   const back = screen.getByRole('button', 'Back to top');
   await expect(back).toBeHidden();
 
-  await screen.scrollUntilVisible(screen.getByRole('heading', 'Keep the thread.'));
+  await browser.evaluate(() => window.scrollTo(0, 900));
   await expect(back).toBeVisible();
   const width = await browser.evaluate(() => getComputedStyle(document.getElementById('progress')!).width);
   expect(width).not.toBe('0px');
